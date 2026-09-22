@@ -17,7 +17,7 @@
 
       <b-form @submit.prevent="saveTask">
         <b-form-group
-          label="Tiêu đề công việc *"
+          label="Title *"
           label-for="subject"
           class="form-label-custom"
         >
