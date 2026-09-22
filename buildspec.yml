@@ -23,7 +23,7 @@ phases:
       - echo Pushing the Docker image...
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - printf '[{"name":"vue-app","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"Main","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
       - DOCKER_CONTAINER_NAME=staging/nestjs
 
 artifacts:
