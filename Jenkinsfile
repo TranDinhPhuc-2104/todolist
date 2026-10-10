@@ -7,7 +7,9 @@ pipeline {
         ECR_REPO    = 'todolist'
         ECS_CLUSTER = 'todolist-cluster'
         ECS_SERVICE = 'todolist-service-i1a0j840'
-        IMAGE       = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
+        TASK_FAMILY = 'todolist'                 // tên task definition (todolist:5 -> family là "todolist")
+        ECR_URL     = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE       = "${ECR_URL}/${ECR_REPO}:${BUILD_NUMBER}"
     }
  
     stages {
@@ -19,10 +21,10 @@ pipeline {
  
         stage('Push ECR') {
             steps {
-               withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
                     sh '''
                         aws ecr get-login-password --region $AWS_REGION \
-                          | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+                          | docker login --username AWS --password-stdin $ECR_URL
                         docker push $IMAGE
                     '''
                 }
@@ -31,14 +33,36 @@ pipeline {
  
         stage('Deploy ECS') {
             steps {
-               withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
                     sh '''
+                        # 1. Lấy task definition hiện tại
+                        aws ecs describe-task-definition --task-definition $TASK_FAMILY \
+                          --region $AWS_REGION --query taskDefinition > td.json
+ 
+                        # 2. Đổi image sang tag mới, bỏ các field chỉ-đọc
+                        jq --arg IMG "$IMAGE" '
+                          .containerDefinitions[0].image = $IMG
+                          | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                                .compatibilities, .registeredAt, .registeredBy)' td.json > new-td.json
+ 
+                        # 3. Đăng ký revision mới
+                        NEW_TD=$(aws ecs register-task-definition --cli-input-json file://new-td.json \
+                          --region $AWS_REGION --query taskDefinition.taskDefinitionArn --output text)
+                        echo "Registered: $NEW_TD"
+ 
+                        # 4. Cập nhật service sang revision mới
                         aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE \
-                          --force-new-deployment --region $AWS_REGION
+                          --task-definition $NEW_TD --region $AWS_REGION
                         aws ecs wait services-stable --cluster $ECS_CLUSTER --services $ECS_SERVICE --region $AWS_REGION
                     '''
                 }
             }
+        }
+    }
+ 
+    post {
+        always {
+            sh 'docker rmi $IMAGE || true'
         }
     }
 }
