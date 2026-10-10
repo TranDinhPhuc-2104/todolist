@@ -19,8 +19,7 @@ pipeline {
  
         stage('Push ECR') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-ecs',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+               withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
                     sh '''
                         aws ecr get-login-password --region $AWS_REGION \
                           | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -32,8 +31,7 @@ pipeline {
  
         stage('Deploy ECS') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-ecs',
-                        usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+               withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
                     sh '''
                         aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE \
                           --force-new-deployment --region $AWS_REGION
