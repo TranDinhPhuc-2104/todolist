@@ -19,7 +19,7 @@ pipeline {
  
         stage('Push ECR') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                withCredentials([usernamePassword(credentialsId: 'aws-ecs',
                         usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
                         aws ecr get-login-password --region $AWS_REGION \
@@ -32,7 +32,7 @@ pipeline {
  
         stage('Deploy ECS') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'aws-creds',
+                withCredentials([usernamePassword(credentialsId: 'aws-ecs',
                         usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
                         aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE \
