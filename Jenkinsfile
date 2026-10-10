@@ -2,11 +2,11 @@ pipeline {
     agent any
  
     environment {
-        AWS_REGION  = 'ap-southeast-1'
-        ACCOUNT_ID  = '123456789012'            // <-- đổi thành AWS account ID của bạn
+        AWS_REGION  = 'us-east-1'
+        ACCOUNT_ID  = '415642395658'
         ECR_REPO    = 'todolist'
         ECS_CLUSTER = 'todolist-cluster'
-        ECS_SERVICE = 'todolist-service'
+        ECS_SERVICE = 'todolist-service-i1a0j840'
         IMAGE       = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
     }
  
