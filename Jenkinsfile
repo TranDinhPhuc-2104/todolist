@@ -15,19 +15,15 @@ pipeline {
     }
  
     stages {
-        stage('Build') {
-            steps {
-                sh 'docker build -t $IMAGE .'
-            }
-        }
- 
-        stage('Push ECR') {
+        stage('Build & Push ECR') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
                     sh '''
-                        aws ecr get-login-password --region $AWS_REGION \
-                          | docker login --username AWS --password-stdin $ECR_URL
-                        docker push $IMAGE
+                        /kaniko/executor \
+                          --context "${WORKSPACE}" \
+                          --dockerfile "${WORKSPACE}/Dockerfile" \
+                          --destination "${IMAGE}" \
+                          --destination "${ECR_URL}/${ECR_REPO}:latest"
                     '''
                 }
             }
@@ -64,7 +60,7 @@ pipeline {
  
     post {
         always {
-            sh 'docker rmi $IMAGE || true'
+            cleanWs()
         }
     }
 }
