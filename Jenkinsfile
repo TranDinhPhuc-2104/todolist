@@ -17,7 +17,7 @@ pipeline {
     stages {
         stage('Build & Push ECR') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'jenkins-agents']]) {
                     sh '''
                         /kaniko/executor \
                           --context "${WORKSPACE}" \
@@ -31,7 +31,7 @@ pipeline {
  
         stage('Deploy ECS') {
             steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-ecs']]) {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'jenkins-agents']]) {
                     sh '''
                         # 1. Lấy task definition hiện tại
                         aws ecs describe-task-definition --task-definition $TASK_FAMILY \
