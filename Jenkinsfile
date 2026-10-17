@@ -15,19 +15,18 @@ pipeline {
     }
  
     stages {
-        stage('Build & Push ECR') {
-            steps {
-                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'jenkins-agents']]) {
-                    sh '''
-                        /kaniko/executor \
-                          --context "${WORKSPACE}" \
-                          --dockerfile "${WORKSPACE}/Dockerfile" \
-                          --destination "${IMAGE}" \
-                          --destination "${ECR_URL}/${ECR_REPO}:latest"
-                    '''
-                }
-            }
-        }
+       stage('Build & Push ECR') {
+  agent { label 'docker-build' }
+  steps {
+    sh '''
+      REG=415642395658.dkr.ecr.us-east-1.amazonaws.com
+      aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $REG
+      docker build -t $REG/todolist:$BUILD_NUMBER -t $REG/todolist:latest .
+      docker push $REG/todolist:$BUILD_NUMBER
+      docker push $REG/todolist:latest
+    '''
+  }
+}
  
         stage('Deploy ECS') {
             steps {
